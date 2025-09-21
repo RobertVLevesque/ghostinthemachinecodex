@@ -1,3 +1,8 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { useGameState, hasCompletedSequence } from "../gameState";
+
+const resetStore = () => {
+  useGameState.getState().reset();
 import { beforeEach, describe, expect, it } from "vitest";
 import { initialState, useGameState, type NodeId, hasCompletedSequence } from "../gameState";
 
@@ -11,6 +16,14 @@ const resetStore = () => {
 
 describe("gameState machine", () => {
   beforeEach(() => {
+    vi.useRealTimers();
+    vi.clearAllTimers();
+    resetStore();
+  });
+
+  afterEach(() => {
+    vi.clearAllTimers();
+    vi.useRealTimers();
     resetStore();
   });
 
@@ -30,6 +43,29 @@ describe("gameState machine", () => {
     expect(after.hoverGlyph()).toBe(false);
   });
 
+  it("auto advances to node1 within 1.5s of glyph hover", () => {
+    vi.useFakeTimers();
+    const store = useGameState.getState();
+    expect(store.hoverGlyph()).toBe(true);
+    expect(useGameState.getState().phase).toBe("glyphHovered");
+    vi.advanceTimersByTime(1400);
+    expect(useGameState.getState().phase).toBe("node1");
+  });
+
+  it("requires node activation in order", () => {
+    vi.useFakeTimers();
+    const store = useGameState.getState();
+    store.hoverGlyph();
+    vi.advanceTimersByTime(1300);
+
+    expect(store.activateNode(2)).toBe(false);
+    expect(store.activateNode(1)).toBe(true);
+    expect(useGameState.getState().phase).toBe("node2");
+
+    expect(store.activateNode(1)).toBe(false);
+    expect(store.activateNode(3)).toBe(false);
+    expect(store.activateNode(2)).toBe(true);
+    expect(useGameState.getState().phase).toBe("node3");
   it("requires node activation in order", () => {
     const store = useGameState.getState();
     store.hoverGlyph();
@@ -49,6 +85,10 @@ describe("gameState machine", () => {
   });
 
   it("reveals ghost after final node", () => {
+    vi.useFakeTimers();
+    const store = useGameState.getState();
+    store.hoverGlyph();
+    vi.advanceTimersByTime(1300);
     const store = useGameState.getState();
     store.hoverGlyph();
     store.activateNode(1);
@@ -62,12 +102,17 @@ describe("gameState machine", () => {
   });
 
   it("reset returns to initial state", () => {
+    vi.useFakeTimers();
+    const store = useGameState.getState();
+    store.hoverGlyph();
+    vi.advanceTimersByTime(1300);
     const store = useGameState.getState();
     store.hoverGlyph();
     store.activateNode(1);
     store.reset();
     const resetState = useGameState.getState();
     expect(resetState.phase).toBe("idle");
+    expect(resetState.activatedNodes).toEqual([]);
     expect(resetState.activatedNodes).toEqual<NodeId[]>([]);
     expect(resetState.terminalVisible).toBe(false);
   });

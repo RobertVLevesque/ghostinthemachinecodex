@@ -39,6 +39,13 @@ export const PulseSweep = ({ pulse, onComplete }: PulseSweepProps) => {
     };
   }, [pulse]);
 
+  if (!pulse) {
+    return <span aria-hidden className="pointer-events-none" />;
+  }
+
+  if (reducedMotion) {
+    return <span aria-hidden className="pointer-events-none" />;
+  }
   if (!pulse || reducedMotion) return null;
 
   return (
@@ -59,6 +66,7 @@ export const PulseSweep = ({ pulse, onComplete }: PulseSweepProps) => {
             height: 2,
             transform: `translateY(-1px) rotate(${geometry.angle}deg)`,
             transformOrigin: "0% 50%",
+            zIndex: 35,
             zIndex: 50,
             background:
               "linear-gradient(90deg, rgba(58, 112, 255, 0.2) 0%, rgba(80, 237, 255, 0.9) 45%, rgba(58, 112, 255, 0.1) 100%)",

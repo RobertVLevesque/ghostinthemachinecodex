@@ -69,6 +69,7 @@ export const Ghost = forwardRef<HTMLDivElement, GhostProps>(
       <motion.div
         ref={ref}
         className={cn(
+          "relative z-20 mx-auto flex h-[420px] w-[320px] max-w-full items-center justify-center",
           "relative mx-auto flex h-[420px] w-[320px] max-w-full items-center justify-center",
           "transition-opacity duration-700"
         )}

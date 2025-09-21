@@ -13,6 +13,34 @@ const phaseOrder: Record<GamePhase, GamePhase | null> = {
   ghostRevealed: null,
 };
 
+let glyphAdvanceTimer: ReturnType<typeof setTimeout> | null = null;
+
+const clearGlyphTimer = () => {
+  if (glyphAdvanceTimer) {
+    clearTimeout(glyphAdvanceTimer);
+    glyphAdvanceTimer = null;
+  }
+};
+
+const scheduleGlyphAdvance = (
+  getState: () => GameStore,
+  setState: (partial: Partial<GameStore>) => void
+) => {
+  clearGlyphTimer();
+  glyphAdvanceTimer = setTimeout(() => {
+    const { phase } = getState();
+    if (phase !== "glyphHovered") return;
+    console.debug("[Ghost FSM] glyphHovered -> node1 (auto advance)");
+    setState({ phase: "node1" });
+    clearGlyphTimer();
+  }, 1200);
+};
+
+const logTransition = (from: GamePhase, to: GamePhase, reason: string) => {
+  if (from === to) return;
+  console.debug(`[Ghost FSM] ${from} -> ${to} (${reason})`);
+};
+
 type BaseState = {
   phase: GamePhase;
   activatedNodes: NodeId[];
@@ -44,6 +72,9 @@ type PersistedState = Pick<BaseState, "phase" | "activatedNodes" | "terminalVisi
 const expectedNodeForPhase: Record<GamePhase, NodeId | null> = {
   idle: null,
   glyphHovered: 1,
+  node1: 1,
+  node2: 2,
+  node3: 3,
   node1: 2,
   node2: 3,
   node3: null,
@@ -57,6 +88,9 @@ export const useGameState = create<GameStore>()(
       hoverGlyph: () => {
         const { phase } = get();
         if (phase !== "idle") return false;
+        logTransition(phase, "glyphHovered", "glyph hover");
+        set({ phase: "glyphHovered", terminalVisible: true, lastActivation: null });
+        scheduleGlyphAdvance(get, (partial) => set(partial));
         set({ phase: "glyphHovered", terminalVisible: true, lastActivation: null });
         return true;
       },
@@ -66,6 +100,26 @@ export const useGameState = create<GameStore>()(
         if (expected !== node) return false;
         if (activatedNodes.includes(node)) return false;
 
+        if (phase === "glyphHovered") {
+          clearGlyphTimer();
+        }
+
+        const nextPhase = phaseOrder[phase];
+        const patch: Partial<BaseState> = {
+          activatedNodes: [...activatedNodes, node],
+          lastActivation: node,
+        };
+        const shouldAdvancePhase =
+          nextPhase && !(phase === "node3" && node === 3);
+        if (shouldAdvancePhase) {
+          logTransition(phase, nextPhase as GamePhase, `activate node ${node}`);
+          set({ ...patch, phase: nextPhase as GamePhase });
+        } else {
+          if (phase === "node3" && node === 3) {
+            console.debug("[Ghost FSM] node3 -> node3 (final node armed)");
+          }
+          set(patch);
+        }
         const nextPhase = phaseOrder[phase];
         set({
           phase: (nextPhase ?? phase) as GamePhase,
@@ -76,11 +130,16 @@ export const useGameState = create<GameStore>()(
       },
       revealGhost: () => {
         const { phase, ghostVisible } = get();
+        if (ghostVisible) return false;
+        if (phase !== "node3" && phase !== "ghostRevealed") return false;
+        logTransition(phase, "ghostRevealed", "reveal ghost");
         if (phase !== "node3" || ghostVisible) return false;
         set({ phase: "ghostRevealed", ghostVisible: true });
         return true;
       },
       reset: () => {
+        clearGlyphTimer();
+        logTransition(get().phase, "idle", "reset");
         set({ ...initialState });
       },
       setMuted: (muted) => set({ muted }),
@@ -102,6 +161,9 @@ export const useGameState = create<GameStore>()(
         if (!state) return;
         if (state.phase === "ghostRevealed") {
           state.ghostVisible = true;
+        }
+        if (state.phase === "glyphHovered") {
+          scheduleGlyphAdvance(useGameState.getState, (partial) => useGameState.setState(partial));
         }
       },
     }

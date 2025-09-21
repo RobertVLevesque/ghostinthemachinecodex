@@ -22,6 +22,7 @@ type CipherNodeProps = {
 };
 
 export const CipherNode = forwardRef<HTMLButtonElement, CipherNodeProps>(
+  ({ id, activated, disabled, onActivate, label, microRevealKey, positionClasses }, ref) => {
   ({ id, visible, activated, disabled, onActivate, label, microRevealKey, positionClasses }, ref) => {
     const reducedMotion = prefersReducedMotion();
     const [reveal, setReveal] = useState(false);
@@ -38,6 +39,13 @@ export const CipherNode = forwardRef<HTMLButtonElement, CipherNodeProps>(
         ref={ref}
         type="button"
         className={cn(
+          "group relative flex h-28 w-28 items-center justify-center sm:h-32 sm:w-32",
+          "pointer-events-auto opacity-100 z-40",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black",
+          positionClasses
+        )}
+        aria-label={label}
+        disabled={disabled}
           "group relative flex h-32 w-32 items-center justify-center",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black",
           "transition-opacity duration-500",
