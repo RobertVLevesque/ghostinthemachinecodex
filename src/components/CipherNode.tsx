@@ -12,6 +12,7 @@ const SIGILS: Record<NodeId, ReactElement> = {
 
 type CipherNodeProps = {
   id: NodeId;
+  visible: boolean;
   activated: boolean;
   disabled?: boolean;
   onActivate: (id: NodeId) => void;
@@ -22,6 +23,7 @@ type CipherNodeProps = {
 
 export const CipherNode = forwardRef<HTMLButtonElement, CipherNodeProps>(
   ({ id, activated, disabled, onActivate, label, microRevealKey, positionClasses }, ref) => {
+  ({ id, visible, activated, disabled, onActivate, label, microRevealKey, positionClasses }, ref) => {
     const reducedMotion = prefersReducedMotion();
     const [reveal, setReveal] = useState(false);
 
@@ -44,6 +46,14 @@ export const CipherNode = forwardRef<HTMLButtonElement, CipherNodeProps>(
         )}
         aria-label={label}
         disabled={disabled}
+          "group relative flex h-32 w-32 items-center justify-center",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black",
+          "transition-opacity duration-500",
+          positionClasses,
+          visible ? "opacity-100" : "pointer-events-none opacity-0"
+        )}
+        aria-label={label}
+        disabled={disabled || !visible}
         onClick={() => onActivate(id)}
         whileHover={reducedMotion ? undefined : { scale: 1.05 }}
         whileTap={reducedMotion ? undefined : { scale: 0.97 }}
