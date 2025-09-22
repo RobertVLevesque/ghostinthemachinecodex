@@ -3,6 +3,15 @@ import { useGameState, hasCompletedSequence } from "../gameState";
 
 const resetStore = () => {
   useGameState.getState().reset();
+import { beforeEach, describe, expect, it } from "vitest";
+import { initialState, useGameState, type NodeId, hasCompletedSequence } from "../gameState";
+
+const resetStore = () => {
+  useGameState.setState({
+    ...initialState,
+    activatedNodes: [...initialState.activatedNodes],
+    lastActivation: null,
+  });
 };
 
 describe("gameState machine", () => {
@@ -57,6 +66,19 @@ describe("gameState machine", () => {
     expect(store.activateNode(3)).toBe(false);
     expect(store.activateNode(2)).toBe(true);
     expect(useGameState.getState().phase).toBe("node3");
+  it("requires node activation in order", () => {
+    const store = useGameState.getState();
+    store.hoverGlyph();
+
+    // cannot skip node 1
+    expect(store.activateNode(2)).toBe(false);
+    expect(store.activateNode(1)).toBe(true);
+    expect(useGameState.getState().phase).toBe("node1");
+
+    // cannot repeat node 1
+    expect(store.activateNode(1)).toBe(false);
+    expect(store.activateNode(2)).toBe(true);
+    expect(useGameState.getState().phase).toBe("node2");
 
     expect(store.activateNode(3)).toBe(true);
     expect(useGameState.getState().phase).toBe("node3");
@@ -67,6 +89,8 @@ describe("gameState machine", () => {
     const store = useGameState.getState();
     store.hoverGlyph();
     vi.advanceTimersByTime(1300);
+    const store = useGameState.getState();
+    store.hoverGlyph();
     store.activateNode(1);
     store.activateNode(2);
     store.activateNode(3);
@@ -82,11 +106,14 @@ describe("gameState machine", () => {
     const store = useGameState.getState();
     store.hoverGlyph();
     vi.advanceTimersByTime(1300);
+    const store = useGameState.getState();
+    store.hoverGlyph();
     store.activateNode(1);
     store.reset();
     const resetState = useGameState.getState();
     expect(resetState.phase).toBe("idle");
     expect(resetState.activatedNodes).toEqual([]);
+    expect(resetState.activatedNodes).toEqual<NodeId[]>([]);
     expect(resetState.terminalVisible).toBe(false);
   });
 
