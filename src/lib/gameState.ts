@@ -75,6 +75,9 @@ const expectedNodeForPhase: Record<GamePhase, NodeId | null> = {
   node1: 1,
   node2: 2,
   node3: 3,
+  node1: 2,
+  node2: 3,
+  node3: null,
   ghostRevealed: null,
 };
 
@@ -88,6 +91,7 @@ export const useGameState = create<GameStore>()(
         logTransition(phase, "glyphHovered", "glyph hover");
         set({ phase: "glyphHovered", terminalVisible: true, lastActivation: null });
         scheduleGlyphAdvance(get, (partial) => set(partial));
+        set({ phase: "glyphHovered", terminalVisible: true, lastActivation: null });
         return true;
       },
       activateNode: (node) => {
@@ -116,6 +120,12 @@ export const useGameState = create<GameStore>()(
           }
           set(patch);
         }
+        const nextPhase = phaseOrder[phase];
+        set({
+          phase: (nextPhase ?? phase) as GamePhase,
+          activatedNodes: [...activatedNodes, node],
+          lastActivation: node,
+        });
         return true;
       },
       revealGhost: () => {
@@ -123,6 +133,7 @@ export const useGameState = create<GameStore>()(
         if (ghostVisible) return false;
         if (phase !== "node3" && phase !== "ghostRevealed") return false;
         logTransition(phase, "ghostRevealed", "reveal ghost");
+        if (phase !== "node3" || ghostVisible) return false;
         set({ phase: "ghostRevealed", ghostVisible: true });
         return true;
       },
