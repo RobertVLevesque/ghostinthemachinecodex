@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "rea
 import { EllipsisVertical, RefreshCcw } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Ghost } from "./components/Ghost";
+import CipherNode from "./components/CipherNode";
 import { CipherNode } from "./components/CipherNode";
 import { TerminalOverlay } from "./components/TerminalOverlay";
 import { HUDHints } from "./components/HUDHints";
@@ -13,6 +14,9 @@ import { playSound, warmAudio } from "./lib/audio";
 const NODES: NodeId[] = [1, 2, 3];
 
 const NODE_POSITIONS: Record<NodeId, string> = {
+  1: "fixed top-6 left-6 z-40 sm:top-10 sm:left-10 md:top-12 md:left-16 lg:top-16 lg:left-20",
+  2: "fixed top-6 right-6 z-40 sm:top-10 sm:right-10 md:top-12 md:right-16 lg:top-16 lg:right-20",
+  3: "fixed bottom-8 right-8 z-40 sm:bottom-12 sm:right-12 md:bottom-16 md:right-16 lg:bottom-20 lg:right-24",
   1: "absolute left-6 top-6 sm:left-10 sm:top-10 md:left-16 md:top-12 lg:left-20 lg:top-16",
   2: "absolute right-6 top-6 sm:right-10 sm:top-10 md:right-16 md:top-12 lg:right-20 lg:top-16",
   3: "absolute right-8 bottom-8 sm:right-12 sm:bottom-12 md:right-16 md:bottom-16 lg:right-24 lg:bottom-20",

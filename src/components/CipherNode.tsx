@@ -21,6 +21,11 @@ type CipherNodeProps = {
   positionClasses: string;
 };
 
+const CipherNode = forwardRef<HTMLButtonElement, CipherNodeProps>(
+  (
+    { id, activated, disabled, onActivate, label, microRevealKey, positionClasses },
+    ref
+  ) => {
 export const CipherNode = forwardRef<HTMLButtonElement, CipherNodeProps>(
   ({ id, activated, disabled, onActivate, label, microRevealKey, positionClasses }, ref) => {
   ({ id, visible, activated, disabled, onActivate, label, microRevealKey, positionClasses }, ref) => {
@@ -60,6 +65,8 @@ export const CipherNode = forwardRef<HTMLButtonElement, CipherNodeProps>(
       >
         <div
           className={cn(
+            "relative h-full w-full",
+            "overflow-hidden rounded-none",
             "relative h-full w-full", 
             "overflow-hidden rounded-none", 
             "[clip-path:polygon(50%_-8%,0%_100%,100%_100%)]"
@@ -116,3 +123,5 @@ export const CipherNode = forwardRef<HTMLButtonElement, CipherNodeProps>(
 );
 
 CipherNode.displayName = "CipherNode";
+
+export default CipherNode;
