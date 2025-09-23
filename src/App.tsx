@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "rea
 import { EllipsisVertical, RefreshCcw } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Ghost } from "./components/Ghost";
-import CipherNode from "./components/CipherNode";
 import { CipherNode } from "./components/CipherNode";
 import { TerminalOverlay } from "./components/TerminalOverlay";
 import { HUDHints } from "./components/HUDHints";
@@ -14,12 +13,6 @@ import { playSound, warmAudio } from "./lib/audio";
 const NODES: NodeId[] = [1, 2, 3];
 
 const NODE_POSITIONS: Record<NodeId, string> = {
-  1: "fixed top-6 left-6 z-40 sm:top-10 sm:left-10 md:top-12 md:left-16 lg:top-16 lg:left-20",
-  2: "fixed top-6 right-6 z-40 sm:top-10 sm:right-10 md:top-12 md:right-16 lg:top-16 lg:right-20",
-  3: "fixed bottom-8 right-8 z-40 sm:bottom-12 sm:right-12 md:bottom-16 md:right-16 lg:bottom-20 lg:right-24",
-  1: "absolute left-6 top-6 sm:left-10 sm:top-10 md:left-16 md:top-12 lg:left-20 lg:top-16",
-  2: "absolute right-6 top-6 sm:right-10 sm:top-10 md:right-16 md:top-12 lg:right-20 lg:top-16",
-  3: "absolute right-8 bottom-8 sm:right-12 sm:bottom-12 md:right-16 md:bottom-16 lg:right-24 lg:bottom-20",
   1: "absolute left-4 top-32 sm:left-10 sm:top-24 lg:left-16 lg:top-24 xl:left-[8vw] xl:top-[18vh]",
   2: "absolute right-4 top-40 sm:right-10 sm:top-28 lg:right-16 lg:top-28 xl:right-[8vw] xl:top-[20vh]",
   3: "absolute right-6 bottom-24 sm:right-12 sm:bottom-24 lg:right-20 lg:bottom-24 xl:right-[12vw] xl:bottom-[18vh]",
@@ -31,30 +24,12 @@ const NODE_LABELS: Record<NodeId, string> = {
   3: "Activate triangle omega",
 };
 
-const NODE_PHASE_VISIBILITY: Record<NodeId, GamePhase[]> = {
-  1: ["node1", "node2", "node3", "ghostRevealed"],
-  2: ["node2", "node3", "ghostRevealed"],
-  3: ["node3", "ghostRevealed"],
-};
-
-const NODE_APPEAR_DELAYS: Record<NodeId, number> = {
-  1: 0,
-  2: 2000,
-  3: 720,
-};
-
-const createMounted = (): Record<NodeId, boolean> => ({ 1: false, 2: false, 3: false });
 const createVisibility = (): Record<NodeId, boolean> => ({ 1: false, 2: false, 3: false });
 const createMicro = (): Record<NodeId, number | null> => ({ 1: null, 2: null, 3: null });
 
 const nextNodeForPhase = (phase: GamePhase): NodeId | null => {
   switch (phase) {
     case "glyphHovered":
-    case "node1":
-      return 1;
-    case "node2":
-      return 2;
-    case "node3":
       return 1;
     case "node1":
       return 2;
@@ -79,13 +54,11 @@ function App() {
     setMuted,
   } = useGameState();
 
-  const [mountedNodes, setMountedNodes] = useState(createMounted);
   const [visibleNodes, setVisibleNodes] = useState(createVisibility);
   const [microKeys, setMicroKeys] = useState(createMicro);
   const [pulse, setPulse] = useState<PulsePayload | null>(null);
   const [eyeGlowKey, setEyeGlowKey] = useState<number | null>(null);
   const [reducedMotion, setReducedMotion] = useState(prefersReducedMotion());
-  const [debugMode, setDebugMode] = useState(false);
 
   const ghostRef = useRef<HTMLDivElement>(null);
   const nodeRefs = {
@@ -94,25 +67,6 @@ function App() {
     3: useRef<HTMLButtonElement>(null),
   } satisfies Record<NodeId, MutableRefObject<HTMLButtonElement | null>>;
 
-  const expectedNode = useMemo(() => nextNodeForPhase(phase), [phase]);
-  const nodeActivationStatus = useMemo(
-    () => ({
-      1: activatedNodes.includes(1 as NodeId),
-      2: activatedNodes.includes(2 as NodeId),
-      3: activatedNodes.includes(3 as NodeId),
-    }),
-    [activatedNodes]
-  );
-  const node1Mounted = mountedNodes[1];
-  const node2Mounted = mountedNodes[2];
-  const node3Mounted = mountedNodes[3];
-  const node1Activated = nodeActivationStatus[1];
-  const node2Activated = nodeActivationStatus[2];
-  const node3Activated = nodeActivationStatus[3];
-  const mountedSummary = useMemo(
-    () => NODES.map((node) => `${node}:${mountedNodes[node] ? "on" : "off"}`).join(" "),
-    [mountedNodes]
-  );
   const nextNode = useMemo(() => nextNodeForPhase(phase), [phase]);
 
   useEffect(() => {
@@ -125,68 +79,12 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const evaluate = () => {
-      const params = new URLSearchParams(window.location.search);
-      setDebugMode(params.get("debug") === "1");
-    };
-    evaluate();
-    const handle = () => evaluate();
-    window.addEventListener("popstate", handle);
-    window.addEventListener("hashchange", handle);
-    return () => {
-      window.removeEventListener("popstate", handle);
-      window.removeEventListener("hashchange", handle);
-    };
-  }, []);
-
-  useEffect(() => {
     if (phase === "glyphHovered") {
       setEyeGlowKey(Date.now());
     }
   }, [phase]);
 
   useEffect(() => {
-    if (node1Mounted) return;
-    const phases = NODE_PHASE_VISIBILITY[1];
-    if (!phases.includes(phase) && !node1Activated) return;
-    const timer = setTimeout(() => {
-      setMountedNodes((prev) => {
-        if (prev[1]) return prev;
-        void playSound("blip", muted);
-        return { ...prev, 1: true };
-      });
-    }, NODE_APPEAR_DELAYS[1]);
-    return () => clearTimeout(timer);
-  }, [phase, node1Activated, muted, node1Mounted]);
-
-  useEffect(() => {
-    if (node2Mounted) return;
-    const phases = NODE_PHASE_VISIBILITY[2];
-    if (!phases.includes(phase) && !node2Activated) return;
-    const timer = setTimeout(() => {
-      setMountedNodes((prev) => {
-        if (prev[2]) return prev;
-        void playSound("blip", muted);
-        return { ...prev, 2: true };
-      });
-    }, NODE_APPEAR_DELAYS[2]);
-    return () => clearTimeout(timer);
-  }, [phase, node2Activated, muted, node2Mounted]);
-
-  useEffect(() => {
-    if (node3Mounted) return;
-    const phases = NODE_PHASE_VISIBILITY[3];
-    if (!phases.includes(phase) && !node3Activated) return;
-    const timer = setTimeout(() => {
-      setMountedNodes((prev) => {
-        if (prev[3]) return prev;
-        void playSound("blip", muted);
-        return { ...prev, 3: true };
-      });
-    }, NODE_APPEAR_DELAYS[3]);
-    return () => clearTimeout(timer);
-  }, [phase, node3Activated, muted, node3Mounted]);
     if (visibleNodes[1]) return;
     if (phase !== "idle" || activatedNodes.includes(1)) {
       if (activatedNodes.includes(1)) {
@@ -246,7 +144,6 @@ function App() {
   };
 
   const handleNodeActivate = (node: NodeId) => {
-    if (nodeActivationStatus[node]) return;
     if (activatedNodes.includes(node)) return;
     const success = activateNode(node);
     if (!success) return;
@@ -274,7 +171,6 @@ function App() {
 
   const handleReset = () => {
     reset();
-    setMountedNodes(createMounted());
     setVisibleNodes(createVisibility());
     setMicroKeys(createMicro());
     setPulse(null);
@@ -287,7 +183,6 @@ function App() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
-      <div className="pointer-events-none absolute inset-0 z-0 opacity-70">
       <div className="pointer-events-none absolute inset-0 opacity-70">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(36,86,255,0.08),transparent_55%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(0,255,235,0.05),transparent_60%)]" />
@@ -356,22 +251,6 @@ function App() {
 
         <PulseSweep pulse={pulse} onComplete={() => setPulse(null)} />
 
-        <div className="absolute inset-0 z-40">
-          {NODES.map((node) =>
-            mountedNodes[node] ? (
-              <CipherNode
-                key={node}
-                id={node}
-                ref={nodeRefs[node]}
-                activated={nodeActivationStatus[node]}
-                disabled={nodeActivationStatus[node] || expectedNode !== node}
-                onActivate={handleNodeActivate}
-                label={NODE_LABELS[node]}
-                microRevealKey={microKeys[node]}
-                positionClasses={NODE_POSITIONS[node]}
-              />
-            ) : null
-          )}
         <div className="pointer-events-none absolute inset-0">
           {NODES.map((node) => (
             <CipherNode
@@ -398,13 +277,6 @@ function App() {
           <span key={dot} className="h-1.5 w-1.5 rounded-full bg-accent-500/50" />
         ))}
       </div>
-
-      {debugMode && (
-        <div className="pointer-events-none fixed bottom-6 left-6 z-50 space-y-1 font-mono text-[0.7rem] uppercase text-accent-400/80">
-          <p>phase: {phase}</p>
-          <p>mounted: {mountedSummary}</p>
-        </div>
-      )}
     </div>
   );
 }
