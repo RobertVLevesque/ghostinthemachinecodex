@@ -139,7 +139,7 @@ export const TerminalOverlay = ({ visible, activatedNodes, phase, onReset }: Ter
         "fixed bottom-6 left-1/2 z-40 w-[92vw] max-w-[420px] -translate-x-1/2 rounded-3xl border border-accent-500/20",
         "bg-black/75 backdrop-blur-md shadow-[0_0_30px_rgba(80,237,255,0.2)]",
         "px-5 pb-5 pt-4 text-sm font-mono text-accent-100",
-        "md:bottom-auto md:left-16 md:top-24 md:w-[24rem] md:translate-x-0",
+        "md:bottom-10 md:left-20 md:top-auto md:w-[24rem] md:translate-x-0",
         "md:px-8 md:pt-6 md:rounded-[2rem]",
         visible ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
       )}
