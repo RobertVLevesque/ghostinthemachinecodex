@@ -13,9 +13,9 @@ import { playSound, warmAudio } from "./lib/audio";
 const NODES: NodeId[] = [1, 2, 3];
 
 const NODE_POSITIONS: Record<NodeId, string> = {
-  1: "absolute left-4 top-32 sm:left-10 sm:top-24 lg:left-16 lg:top-24 xl:left-[8vw] xl:top-[18vh]",
-  2: "absolute right-4 top-40 sm:right-10 sm:top-28 lg:right-16 lg:top-28 xl:right-[8vw] xl:top-[20vh]",
-  3: "absolute right-6 bottom-24 sm:right-12 sm:bottom-24 lg:right-20 lg:bottom-24 xl:right-[12vw] xl:bottom-[18vh]",
+  1: "fixed top-6 left-6 z-40 pointer-events-auto",
+  2: "fixed top-6 right-6 z-40 pointer-events-auto",
+  3: "fixed bottom-8 right-8 z-40 pointer-events-auto",
 };
 
 const NODE_LABELS: Record<NodeId, string> = {
